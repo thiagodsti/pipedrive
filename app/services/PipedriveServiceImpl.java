@@ -17,6 +17,8 @@ import play.libs.ws.WSResponse;
 
 public class PipedriveServiceImpl implements PipedriveService {
 
+	private static final String URL_PIPEDRIVE = "https://api.pipedrive.com/v1";
+	private static final String URL_PIPEDRIVE_ATIVIDADES = URL_PIPEDRIVE + "/activities";
 	@Inject
 	private WSClient ws;
 
@@ -24,12 +26,9 @@ public class PipedriveServiceImpl implements PipedriveService {
 		if (atividade == null) {
 			throw new Exception("Atividade está nula");
 		}
-
 		this.validarAtividade(atividade);
 		JsonNode jsonNode = Json.toJson(atividade);
-
-		String url = "https://api.pipedrive.com/v1/activities";
-		WSRequest request = ws.url(url).setQueryParameter("api_token", "539e9bff4e3cc6b4a0ecf984f8d9f80039dd5667");
+		WSRequest request = obterWsRequestAtividadesComToken();
 		request.setContentType("application/json");
 		CompletionStage<WSResponse> responsePromise = request.post(jsonNode);
 		WSResponse wsResponse = responsePromise.toCompletableFuture().get();
@@ -58,6 +57,20 @@ public class PipedriveServiceImpl implements PipedriveService {
 		if (tipoAtividade == null) {
 			throw new Exception("Atividade deve possuir um tipo.");
 		}
+	}
+
+	@Override
+	public WSResponse obterDetalhesUmaAtividade(Long codigoAtividade) throws Exception {
+		if (codigoAtividade == null) {
+			return null;
+		}
+		WSRequest wsRequest = obterWsRequestAtividadesComToken();
+		return wsRequest.setQueryParameter("id", codigoAtividade.toString()).get().toCompletableFuture().get();
+	}
+
+	private WSRequest obterWsRequestAtividadesComToken() {
+		return ws.url(URL_PIPEDRIVE_ATIVIDADES).setQueryParameter("api_token",
+				"539e9bff4e3cc6b4a0ecf984f8d9f80039dd5667");
 	}
 
 }

@@ -33,7 +33,6 @@ public class PipedriveController extends Controller {
 		try {
 			wsResponse = pipedriveService.adicionarNovaAtividade(atividade);
 		} catch (Exception e) {
-			e.printStackTrace();
 			LOGGER.error(String.format("Houve erro ao adicionar atividade: %s", e.getCause()));
 			return internalServerError(e.getMessage());
 		}
@@ -42,6 +41,22 @@ public class PipedriveController extends Controller {
 		} else {
 			return badRequest(wsResponse.getBodyAsStream());
 		}
+	}
+
+	public Result obterDetalhesUmaAtividade(Long codigoAtividade) {
+		WSResponse wsResponse = null;
+		try {
+			wsResponse = pipedriveService.obterDetalhesUmaAtividade(codigoAtividade);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return internalServerError(e.getMessage());
+		}
+
+		if (wsResponse == null) {
+			return notFound("Não foi possível encontrar atividade");
+		}
+
+		return ok(wsResponse.getBodyAsStream());
 	}
 
 	private Atividade obterAtividadePeloFormulario(JsonNode formulario) {

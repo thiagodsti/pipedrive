@@ -3,3 +3,5 @@
 # ~~~~
 
 POST /pipedrive/atividade		controllers.PipedriveController.adicionarNovaAtividade
+
+GET /pipedrive/atividade/:codigoAtividade    controllers.PipedriveController.obterDetalhesUmaAtividade(codigoAtividade: Long)
