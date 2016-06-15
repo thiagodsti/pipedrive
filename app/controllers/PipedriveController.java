@@ -26,7 +26,6 @@ public class PipedriveController extends Controller {
 	private PipedriveServiceImpl pipedriveService;
 
 	public Result adicionarNovaAtividade() {
-
 		JsonNode formulario = request().body().asJson();
 		Atividade atividade = obterAtividadePeloFormulario(formulario);
 		WSResponse wsResponse;
@@ -51,11 +50,40 @@ public class PipedriveController extends Controller {
 			e.printStackTrace();
 			return internalServerError(e.getMessage());
 		}
-
 		if (wsResponse == null) {
 			return notFound("Não foi possível encontrar atividade");
 		}
+		return ok(wsResponse.getBodyAsStream());
+	}
 
+	public Result editarAtividade(Long codigoAtividade) {
+		JsonNode formulario = request().body().asJson();
+		Atividade atividade = obterAtividadePeloFormulario(formulario);
+		WSResponse wsResponse;
+		try {
+			wsResponse = pipedriveService.editarAtividade(atividade, codigoAtividade);
+		} catch (Exception e) {
+			LOGGER.error(String.format("Houve erro ao editar atividade %s: %s", codigoAtividade, e.getCause()));
+			return internalServerError(e.getMessage());
+		}
+		if (wsResponse.getStatus() == 201) {
+			return created(wsResponse.getBodyAsStream());
+		} else {
+			return badRequest(wsResponse.getBodyAsStream());
+		}
+	}
+
+	public Result deletarAtividade(Long codigoAtividade) {
+		WSResponse wsResponse = null;
+		try {
+			wsResponse = pipedriveService.deletarAtividade(codigoAtividade);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return internalServerError(e.getMessage());
+		}
+		if (wsResponse == null) {
+			return notFound("Não foi possível deletar atividade");
+		}
 		return ok(wsResponse.getBodyAsStream());
 	}
 
@@ -71,12 +99,20 @@ public class PipedriveController extends Controller {
 		atividade.setDataHora(obterData(parseJsonNodeToString(formulario.get("dataHora")), "HH:mm"));
 		atividade.setDuracao(obterData(parseJsonNodeToString(formulario.get("duracao"))));
 		atividade.setFeito(formulario.get("feito").asBoolean());
-		atividade.setIdNegocio(this.parseStringToLong(parseJsonNodeToString(formulario.get("idNegocio"))));
-		atividade.setIdOrganizacao(this.parseStringToLong(parseJsonNodeToString(formulario.get("idOrganizacao"))));
-		atividade.setIdPessoa(this.parseStringToLong(parseJsonNodeToString(formulario.get("idPessoa"))));
-		atividade.setIdUsuario(this.parseStringToLong(parseJsonNodeToString(formulario.get("idUsuario"))));
+		atividade.setIdNegocio(parseJsonNodeToLong(formulario.get("idNegocio")));
+		atividade.setIdOrganizacao(parseJsonNodeToLong(formulario.get("idOrganizacao")));
+		atividade.setIdPessoa(parseJsonNodeToLong(formulario.get("idPessoa")));
+		atividade.setIdUsuario(parseJsonNodeToLong(formulario.get("idUsuario")));
 		atividade.setObservacao(parseJsonNodeToString(formulario.get("observacao")));
 		return atividade;
+	}
+
+	private Long parseJsonNodeToLong(JsonNode node) {
+		if (node == null) {
+			return null;
+		}
+
+		return node.asLong();
 	}
 
 	private String parseJsonNodeToString(JsonNode node) {
@@ -84,14 +120,6 @@ public class PipedriveController extends Controller {
 			return null;
 		}
 		return node.asText();
-	}
-
-	private Long parseStringToLong(String codigo) {
-		if (StringUtils.isEmpty(codigo)) {
-			return null;
-		}
-
-		return Long.parseLong(codigo);
 	}
 
 	private AtividadeTipoEnum obterTipoAtividade(String tipoAtividade) {

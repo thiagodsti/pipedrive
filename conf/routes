@@ -2,6 +2,7 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
-POST /pipedrive/atividade		controllers.PipedriveController.adicionarNovaAtividade
-
-GET /pipedrive/atividade/:codigoAtividade    controllers.PipedriveController.obterDetalhesUmaAtividade(codigoAtividade: Long)
+POST 	/pipedrive/atividade						controllers.PipedriveController.adicionarNovaAtividade
+GET 	/pipedrive/atividade/:codigoAtividade    	controllers.PipedriveController.obterDetalhesUmaAtividade(codigoAtividade: Long)
+PUT 	/pipedrive/atividade/:codigoAtividade		controllers.PipedriveController.editarAtividade(codigoAtividade: Long)
+DELETE 	/pipedrive/atividade/:codigoAtividade		controllers.PipedriveController.deletarAtividade(codigoAtividade: Long)

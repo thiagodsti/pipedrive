@@ -1,6 +1,7 @@
 package services;
 
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
@@ -19,6 +20,7 @@ public class PipedriveServiceImpl implements PipedriveService {
 
 	private static final String URL_PIPEDRIVE = "https://api.pipedrive.com/v1";
 	private static final String URL_PIPEDRIVE_ATIVIDADES = URL_PIPEDRIVE + "/activities";
+	private static final String URL_PIPEDRIVE_ATIVIDADES_COM_CODIGO = URL_PIPEDRIVE_ATIVIDADES + "/%s";
 	@Inject
 	private WSClient ws;
 
@@ -28,7 +30,7 @@ public class PipedriveServiceImpl implements PipedriveService {
 		}
 		this.validarAtividade(atividade);
 		JsonNode jsonNode = Json.toJson(atividade);
-		WSRequest request = obterWsRequestAtividadesComToken();
+		WSRequest request = obterWsRequestAtividadesComToken(URL_PIPEDRIVE_ATIVIDADES);
 		request.setContentType("application/json");
 		CompletionStage<WSResponse> responsePromise = request.post(jsonNode);
 		WSResponse wsResponse = responsePromise.toCompletableFuture().get();
@@ -64,13 +66,37 @@ public class PipedriveServiceImpl implements PipedriveService {
 		if (codigoAtividade == null) {
 			return null;
 		}
-		WSRequest wsRequest = obterWsRequestAtividadesComToken();
-		return wsRequest.setQueryParameter("id", codigoAtividade.toString()).get().toCompletableFuture().get();
+		String url = String.format(URL_PIPEDRIVE_ATIVIDADES_COM_CODIGO, codigoAtividade);
+		WSRequest request = obterWsRequestAtividadesComToken(url);
+		return request.get().toCompletableFuture().get();
 	}
 
-	private WSRequest obterWsRequestAtividadesComToken() {
-		return ws.url(URL_PIPEDRIVE_ATIVIDADES).setQueryParameter("api_token",
-				"539e9bff4e3cc6b4a0ecf984f8d9f80039dd5667");
+	@Override
+	public WSResponse editarAtividade(Atividade atividade, Long codigoAtividade) throws Exception {
+		if (atividade == null) {
+			throw new Exception("Atividade está nula");
+		}
+		this.validarAtividade(atividade);
+		JsonNode jsonNode = Json.toJson(atividade);
+		String url = String.format(URL_PIPEDRIVE_ATIVIDADES_COM_CODIGO, codigoAtividade);
+		WSRequest request = obterWsRequestAtividadesComToken(url);
+		request.setContentType("application/json");
+		CompletionStage<WSResponse> responsePromise = request.put(jsonNode);
+		WSResponse wsResponse = responsePromise.toCompletableFuture().get();
+		return wsResponse;
+	}
+
+	private WSRequest obterWsRequestAtividadesComToken(String URL) {
+		return ws.url(URL).setQueryParameter("api_token", "539e9bff4e3cc6b4a0ecf984f8d9f80039dd5667");
+	}
+
+	public WSResponse deletarAtividade(Long codigoAtividade) throws InterruptedException, ExecutionException {
+		if (codigoAtividade == null) {
+			return null;
+		}
+		String url = String.format(URL_PIPEDRIVE_ATIVIDADES_COM_CODIGO, codigoAtividade);
+		WSRequest request = obterWsRequestAtividadesComToken(url);
+		return request.delete().toCompletableFuture().get();
 	}
 
 }
