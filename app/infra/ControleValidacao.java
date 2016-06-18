@@ -39,8 +39,7 @@ public class ControleValidacao {
 		}
 		StringBuilder stringBuilder = new StringBuilder();
 		validacoes.forEach(validacao -> {
-			// Mudar para o commons de alguma lib o "\n" não lembro qual usar.
-			stringBuilder.append(validacao.getMessage());
+			stringBuilder.append(validacao.getMessage() + System.lineSeparator());
 		});
 
 		throw new RuntimeException(stringBuilder.toString());

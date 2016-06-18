@@ -1,7 +1,6 @@
 package services;
 
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
@@ -11,7 +10,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import entities.Atividade;
 import entities.Atividade.AtividadeTipoEnum;
-import entities.AtividadeParse;
 import infra.ControleValidacao;
 import play.libs.Json;
 import play.libs.ws.WSClient;
@@ -26,14 +24,8 @@ public class PipedriveServiceImpl implements PipedriveService {
 
 	@Inject
 	private WSClient ws;
-	@Inject
-	private AtividadeParse atividadeParse;
 
 	public WSResponse adicionarNovaAtividade(Atividade atividade) throws Exception {
-		if (atividade == null) {
-			throw new Exception("Atividade está nula");
-		}
-
 		this.validarAtividade(atividade);
 		JsonNode jsonNode = Json.toJson(atividade);
 		WSRequest request = obterWsRequestAtividadesComToken(URL_PIPEDRIVE_ATIVIDADES);
@@ -55,9 +47,6 @@ public class PipedriveServiceImpl implements PipedriveService {
 	@Override
 	public WSResponse editarAtividade(Atividade atividade, Long codigoAtividade) throws Exception {
 		this.validarAtividade(atividade);
-		JsonNode objeto = this.obterDetalhesUmaAtividade(codigoAtividade).asJson().get("data");
-
-		System.out.println(objeto);
 		JsonNode jsonNode = Json.toJson(atividade);
 		String url = String.format(URL_PIPEDRIVE_ATIVIDADES_COM_CODIGO, codigoAtividade);
 		WSRequest request = obterWsRequestAtividadesComToken(url);
@@ -68,10 +57,8 @@ public class PipedriveServiceImpl implements PipedriveService {
 	}
 
 	@Override
-	public WSResponse deletarAtividade(Long codigoAtividade) throws InterruptedException, ExecutionException {
-		if (codigoAtividade == null) {
-			return null;
-		}
+	public WSResponse deletarAtividade(Long codigoAtividade) throws Exception {
+		this.validarCodigoAtividade(codigoAtividade);
 		String url = String.format(URL_PIPEDRIVE_ATIVIDADES_COM_CODIGO, codigoAtividade);
 		WSRequest request = obterWsRequestAtividadesComToken(url);
 		return request.delete().toCompletableFuture().get();

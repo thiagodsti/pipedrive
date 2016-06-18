@@ -3,10 +3,12 @@ package controllers;
 import javax.inject.Inject;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import entities.Atividade;
 import entities.AtividadeParse;
 import play.Logger.ALogger;
+import play.libs.Json;
 import play.libs.ws.WSResponse;
 import play.mvc.Controller;
 import play.mvc.Http.Status;
@@ -30,13 +32,13 @@ public class PipedriveController extends Controller {
 			wsResponse = pipedriveService.adicionarNovaAtividade(atividade);
 		} catch (Exception e) {
 			LOGGER.error(e.getMessage());
-			return badRequest(e.getMessage());
+			return badRequest(this.obterErro(e.getMessage()));
 		}
-		if (wsResponse.getStatus() == 201) {
+		if (wsResponse.getStatus() == Status.CREATED) {
 			return created().withHeader("id", wsResponse.asJson().get("data").get("id").asText());
 		} else {
 			LOGGER.error(String.format("[ERRO DESCONHECIDO]: %s", wsResponse.asJson()));
-			return badRequest(String.format("Erro: %s", wsResponse.asJson()));
+			return badRequest(this.obterErro(wsResponse.asJson().toString()));
 		}
 	}
 
@@ -46,10 +48,11 @@ public class PipedriveController extends Controller {
 			wsResponse = pipedriveService.obterDetalhesUmaAtividade(codigoAtividade);
 		} catch (Exception e) {
 			LOGGER.error(e.getMessage());
-			return badRequest(e.getMessage());
+			return badRequest(this.obterErro(e.getMessage()));
 		}
 		if (wsResponse == null || wsResponse.getStatus() == Status.NOT_FOUND) {
-			return notFound(String.format("Não foi possível encontrar atividade com o código %s", codigoAtividade));
+			return notFound(this
+					.obterErro(String.format("Não foi possível encontrar atividade com o código %s", codigoAtividade)));
 		}
 		return ok(wsResponse.asJson());
 	}
@@ -62,12 +65,12 @@ public class PipedriveController extends Controller {
 			wsResponse = pipedriveService.editarAtividade(atividade, codigoAtividade);
 		} catch (Exception e) {
 			LOGGER.error(e.getMessage());
-			return internalServerError(e.getMessage());
+			return internalServerError(this.obterErro(e.getMessage()));
 		}
-		if (wsResponse.getStatus() == 201) {
+		if (wsResponse.getStatus() == Status.OK || wsResponse.getStatus() == Status.CREATED) {
 			return created().withHeader("id", wsResponse.asJson().get("data").get("id").asText());
 		} else {
-			return badRequest(wsResponse.asJson());
+			return badRequest(this.obterErro(wsResponse.asJson().toString()));
 		}
 	}
 
@@ -77,12 +80,21 @@ public class PipedriveController extends Controller {
 			wsResponse = pipedriveService.deletarAtividade(codigoAtividade);
 		} catch (Exception e) {
 			LOGGER.error(e.getMessage());
-			return badRequest(e.getMessage());
+			return badRequest(this.obterErro(e.getMessage()));
 		}
-		if (wsResponse == null) {
-			return notFound(String.format("Não foi possível deletar atividade com código %s", codigoAtividade));
+		if (wsResponse.getStatus() == Status.OK) {
+			return ok(wsResponse.asJson());
 		}
-		return ok(wsResponse.asJson());
+
+		if (wsResponse.getStatus() == Status.GONE) {
+			return notFound(
+					obterErro(String.format("Não foi possível encontrar a atividade de código %s", codigoAtividade)));
+		}
+		return badRequest(obterErro(wsResponse.asJson().toString()));
+	}
+
+	private ObjectNode obterErro(String data) {
+		return Json.newObject().put("success", false).put("error", data);
 	}
 
 }
